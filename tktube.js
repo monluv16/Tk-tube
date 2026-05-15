@@ -1,41 +1,21 @@
-// =============================================================================
-// VAAPP PLUGIN - TKTUBE.COM (Full HD JAV + FC2 + Uncensored)
-// Version: 1.0.4 - FIXED by Grok
-// =============================================================================
-
 function getManifest() {
     return JSON.stringify({
         "id": "tktube",
-        "name": "TKTube - JAV HD Free",
-        "version": "1.0.4",
+        "name": "TKTube - JAV HD",
+        "version": "1.0.7",
         "baseUrl": "https://tktube.com",
         "iconUrl": "https://tktube.com/static/images/logo.png",
         "isEnabled": true,
         "isAdult": true,
         "type": "MOVIE",
-        "layoutType": "VERTICAL",
         "playerType": "exoplayer"
     });
 }
 
 function getHomeSections() {
-    return JSON.stringify([
-        { slug: 'latest-updates', title: '🔥 New Videos', type: 'Horizontal' },
-        { slug: 'most-popular', title: '👁️ Most Viewed', type: 'Horizontal' },
-        { slug: 'top-rated', title: '⭐ Top Rated', type: 'Horizontal' }
-    ]);
+    return JSON.stringify([{ slug: 'latest-updates', title: '🔥 New Videos', type: 'Horizontal' }]);
 }
 
-function getPrimaryCategories() {
-    return JSON.stringify([
-        { name: 'JAV Uncensored', slug: 'categories/7c26fad3901898582e98669f503d20de/' },
-        { name: 'Mosaic Removed', slug: 'categories/454545388bfe05b5b43cdc4fb9496ac6/' },
-        { name: 'FC2-PPV', slug: 'categories/fc2/' },
-        { name: 'JAV Censored', slug: 'categories/d7925a1dc9f80c4da5a47d8bf0ffb1d6/' }
-    ]);
-}
-
-// ==================== URL GENERATORS ====================
 function getUrlList(slug, filtersJson) {
     var page = JSON.parse(filtersJson || "{}").page || 1;
     return `https://tktube.com/\( {slug}?page= \){page}`;
@@ -50,103 +30,48 @@ function getUrlDetail(slug) {
     return `https://tktube.com/${slug}`;
 }
 
-// ==================== PARSERS ====================
 function parseListResponse(html) {
-    try {
-        var items = [];
-        var regex = /<a[^>]*href="\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[\s\S]*?>([^<]+)[\s\S]*?([\d:]+)?/gi;
-        var match;
-
-        while ((match = regex.exec(html)) !== null) {
-            var slug = match[1];
-            var poster = match[2];
-            var title = match[3].trim().replace(/^\s*HD\s*/, '');
-            var duration = match[4] || "N/A";
-
-            if (slug && title && !slug.includes('categories') && !slug.includes('search')) {
-                items.push({
-                    id: slug,
-                    title: title,
-                    posterUrl: poster.startsWith('http') ? poster : 'https://tktube.com' + poster,
-                    quality: "FHD",
-                    episode_current: duration
-                });
-            }
+    var items = [];
+    var regex = /<a[^>]*href="\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[\s\S]*?>([^<]+)[\s\S]*?([\d:]+)?/gi;
+    var match;
+    while ((match = regex.exec(html)) !== null) {
+        var slug = match[1], title = match[3].trim();
+        if (slug && title && !slug.includes('categories')) {
+            items.push({
+                id: slug,
+                title: title,
+                posterUrl: match[2].startsWith('http') ? match[2] : 'https://tktube.com' + match[2],
+                quality: "FHD"
+            });
         }
-
-        return JSON.stringify({
-            items: items,
-            pagination: { currentPage: 1, totalPages: 20 }
-        });
-    } catch (e) {
-        return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1 } });
     }
+    return JSON.stringify({ items: items, pagination: { currentPage: 1, totalPages: 10 } });
 }
 
-function parseSearchResponse(html) {
-    return parseListResponse(html);
-}
+function parseSearchResponse(html) { return parseListResponse(html); }
 
 function parseMovieDetail(html) {
-    try {
-        var titleMatch = html.match(/<h1[^>]*>([^<]+)/i) || ["", "TKTube Video"];
-        var posterMatch = html.match(/<img[^>]*src="([^"]+)"[^>]*class="[^"]*poster[^"]*"/i);
-
-        return JSON.stringify({
-            id: "tktube-detail",
-            title: titleMatch[1].trim(),
-            posterUrl: posterMatch ? (posterMatch[1].startsWith('http') ? posterMatch[1] : 'https://tktube.com' + posterMatch[1]) : "",
-            backdropUrl: "",
-            description: "Full HD JAV - TKTube Free",
-            servers: [{
-                name: "TKTube Server",
-                episodes: [{ id: "play", name: "▶ Play Full", slug: "play" }]
-            }],
-            quality: "FHD",
-            year: new Date().getFullYear(),
-            rating: 9.0,
-            status: "Full"
-        });
-    } catch (e) {
-        return JSON.stringify({ id: "", title: "Error", servers: [] });
-    }
-}
-
-function parseDetailResponse(html) {
-    var m3u8Match = html.match(/(https?:\/\/[^\s"']+\.m3u8[^\s"']*)/i);
-    
-    if (m3u8Match) {
-        return JSON.stringify({
-            url: m3u8Match[1],
-            headers: { 
-                "Referer": "https://tktube.com/",
-                "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36"
-            },
-            subtitles: []
-        });
-    }
-
     return JSON.stringify({
-        url: "https://tktube.com" + (typeof window !== 'undefined' ? window.location.pathname : ''),
-        headers: { "Referer": "https://tktube.com/" },
-        isEmbed: true
+        title: "TKTube Video",
+        servers: [{ name: "Server 1", episodes: [{ id: "play", name: "Play", slug: "play" }] }]
     });
 }
 
-function parseEmbedResponse(html, sourceUrl) {
+function parseDetailResponse(html) {
     var m3u8 = html.match(/(https?:\/\/[^\s"']+\.m3u8[^\s"']*)/i);
     if (m3u8) {
-        return JSON.stringify({
-            url: m3u8[1],
-            headers: { "Referer": sourceUrl }
-        });
+        return JSON.stringify({ url: m3u8[1], headers: { "Referer": "https://tktube.com/" } });
     }
-    return JSON.stringify({ url: "", isEmbed: false });
+    return JSON.stringify({ url: "https://tktube.com", isEmbed: true });
 }
 
-// Dummy functions
-function getFilterConfig() { return JSON.stringify({}); }
+function parseEmbedResponse(html) {
+    var m3u8 = html.match(/(https?:\/\/[^\s"']+\.m3u8[^\s"']*)/i);
+    return JSON.stringify(m3u8 ? { url: m3u8[1] } : { url: "" });
+}
+
+// Các hàm thừa
+function getPrimaryCategories() { return "[]"; }
+function getFilterConfig() { return "{}"; }
 function getUrlCategories() { return ""; }
 function parseCategoriesResponse() { return "[]"; }
-function parseCountriesResponse() { return "[]"; }
-function parseYearsResponse() { return "[]"; }
