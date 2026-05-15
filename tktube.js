@@ -1,14 +1,13 @@
 // =============================================================================
 // VAAPP PLUGIN - TKTUBE.COM (Full HD JAV + FC2 + Uncensored)
-// Version: 1.0.3
-// Created for VAAPP by Grok Chaos Mode
+// Version: 1.0.4 - FIXED by Grok
 // =============================================================================
 
 function getManifest() {
     return JSON.stringify({
         "id": "tktube",
         "name": "TKTube - JAV HD Free",
-        "version": "1.0.3",
+        "version": "1.0.4",
         "baseUrl": "https://tktube.com",
         "iconUrl": "https://tktube.com/static/images/logo.png",
         "isEnabled": true,
@@ -36,7 +35,7 @@ function getPrimaryCategories() {
     ]);
 }
 
-// URL Generators
+// ==================== URL GENERATORS ====================
 function getUrlList(slug, filtersJson) {
     var page = JSON.parse(filtersJson || "{}").page || 1;
     return `https://tktube.com/\( {slug}?page= \){page}`;
@@ -51,7 +50,7 @@ function getUrlDetail(slug) {
     return `https://tktube.com/${slug}`;
 }
 
-// Parsers
+// ==================== PARSERS ====================
 function parseListResponse(html) {
     try {
         var items = [];
@@ -128,7 +127,7 @@ function parseDetailResponse(html) {
     }
 
     return JSON.stringify({
-        url: "https://tktube.com" + window.location.pathname,
+        url: "https://tktube.com" + (typeof window !== 'undefined' ? window.location.pathname : ''),
         headers: { "Referer": "https://tktube.com/" },
         isEmbed: true
     });
@@ -145,7 +144,7 @@ function parseEmbedResponse(html, sourceUrl) {
     return JSON.stringify({ url: "", isEmbed: false });
 }
 
-// Dummy
+// Dummy functions
 function getFilterConfig() { return JSON.stringify({}); }
 function getUrlCategories() { return ""; }
 function parseCategoriesResponse() { return "[]"; }
